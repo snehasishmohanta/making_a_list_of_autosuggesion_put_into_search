@@ -170,32 +170,39 @@ below is the code to find the above output:
 import datetime
 from collections import defaultdict
 
-def getting_partial_queries(querylist):
+
+def filter_out_common_queries(querylist):
     basequery = ' '.join(querylist)
     querylist = []
+    p_q = basequery.split(" ")
+    for pa in p_q:
+        for n in range(2,len(pa)+1):
+            querylist.append(pa[:n])
     for n in range(2,len(basequery)+1):
         querylist.append(basequery[:n])
-    return querylist
+    return set(querylist)
 
-queries_time = defaultdict(list)  
+queries_time = defaultdict(list)
+
 with open('logs.txt') as f:
     for line in f:
         fields = [ x.strip() for x in line.split(',') ]
         timestamp = datetime.datetime.strptime(fields[0], "%H:%M:%S")
-        queries_time[fields[1]].append(timestamp)  
+        queries_time[fields[1]].append(timestamp)
 
 with open('search.txt') as inputf, open('search_output.txt', 'w') as outputf:
     for line in inputf:
         fields = [ x.strip() for x in line.split(',') ]
         timestamp = datetime.datetime.strptime(fields[0], "%H:%M:%S")
-        queries = getting_partial_queries(fields[1].split())  
+        queries = filter_out_common_queries(fields[1].split())
         results = []
         for q in queries:
             poss_timestamps = queries_time[q]
             for ts in poss_timestamps:
-                if timestamp - datetime.timedelta(seconds=15) <= ts <= timestamp:
+                if timestamp - datetime.timedelta(seconds=60) <= ts <= timestamp:
                     results.append(q)
-        outputf.write(line.strip() + " , {}\n".format(results))
+        outputf.write(line.strip() + " - {}\n".format(results))
+
 
 
 
